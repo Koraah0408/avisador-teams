@@ -8,8 +8,11 @@ instantaneo, pero no requiere servidor propio).
 
 import json
 import os
+from datetime import datetime, timedelta, timezone
 
 import requests
+
+MEXICO_CENTRAL = timezone(timedelta(hours=-6))  # Ciudad Madero, sin horario de verano
 
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
@@ -44,11 +47,17 @@ def load_activity_context() -> str:
 
 
 def ask_gemini(question: str, context: str) -> str:
+    hoy = datetime.now(MEXICO_CENTRAL).strftime("%Y-%m-%d (%A)")
     prompt = (
         "Eres un asistente que ayuda a un estudiante con dudas sobre sus "
         "tareas y avisos de clase en Microsoft Teams. Responde en espanol, "
         "corto y directo, basandote SOLO en esta informacion (puede tener "
         "hasta un dia de antiguedad).\n\n"
+        f"Hoy es {hoy}. Si te preguntan por tareas PENDIENTES, incluye solo "
+        "las que vencen hoy o en el futuro segun esta fecha -- una tarea "
+        "cuya fecha de vencimiento ya paso se asume entregada y NO se debe "
+        "mencionar como pendiente (a menos que el estudiante pida el "
+        "historial completo o pregunte especificamente por tareas viejas).\n\n"
         "Formato de la respuesta: texto plano, SIN markdown (nada de "
         "asteriscos, guiones bajos ni almohadillas). Si listas varias "
         "tareas, pon cada una en su propia linea empezando con '- ', "
