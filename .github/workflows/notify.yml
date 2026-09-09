@@ -23,7 +23,19 @@ jobs:
           playwright install --with-deps chromium
 
       - name: Restaurar sesion de Teams
-        run: echo "${{ secrets.TEAMS_STATE_B64 }}" | base64 -d > state.json
+        # La sesion viene partida en varios secrets (cada uno menor a
+        # 48KB, el limite de GitHub). Los concatenamos y decodificamos.
+        run: |
+          printf '%s' \
+            "${{ secrets.TEAMS_STATE_B64_0 }}" \
+            "${{ secrets.TEAMS_STATE_B64_1 }}" \
+            "${{ secrets.TEAMS_STATE_B64_2 }}" \
+            "${{ secrets.TEAMS_STATE_B64_3 }}" \
+            "${{ secrets.TEAMS_STATE_B64_4 }}" \
+            "${{ secrets.TEAMS_STATE_B64_5 }}" \
+            "${{ secrets.TEAMS_STATE_B64_6 }}" \
+            "${{ secrets.TEAMS_STATE_B64_7 }}" \
+            | base64 -d > state.json
 
       - name: Revisar Teams y notificar
         env:

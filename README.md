@@ -1,13 +1,14 @@
 # Teams Notifier
 
 Manda un resumen diario (por Telegram) de tu feed de Actividad de Microsoft
-Teams — menciones, avisos de canal, tareas nuevas — a una hora fija, usando
+Teams — tareas nuevas, avisos de canal, menciones — a una hora fija, usando
 GitHub Actions (no depende de que tu laptop o celular esten prendidos).
 
-No usa la API oficial de Microsoft Graph para leer mensajes/tareas porque esos
-permisos requieren aprobacion de administrador en la mayoria de instituciones.
-En su lugar, automatiza un navegador (Playwright) que revisa Teams como lo
-harias tu, usando una sesion que guardas una sola vez.
+No usa la API oficial de Microsoft Graph para leer tareas/mensajes porque
+esos permisos requieren aprobacion de administrador en la mayoria de
+instituciones. Tampoco automatiza el login interactivo (Microsoft lo
+detecta y lo bloquea). En su lugar, reutiliza una sesion capturada de tu
+navegador (Brave) ya autenticado, y automatiza solo la lectura del feed.
 
 ## 1. Instalar dependencias localmente
 
@@ -18,16 +19,18 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-## 2. Guardar tu sesion de Teams (una sola vez)
+## 2. Generar tu sesion de Teams
+
+Cierra Brave por completo, y con tu sesion de Teams ya iniciada ahi
+normalmente, corre:
 
 ```bash
 python scripts/login_local.py
 ```
 
-Se abre un navegador de verdad. Inicia sesion con tu cuenta institucional
-normalmente. Cuando ya veas tu Teams cargado, regresa a la terminal y
-presiona ENTER. Esto crea `state.json` (NO se sube a git, esta en
-`.gitignore`).
+Copia tu perfil de Brave a una carpeta temporal, abre esa copia (sin tocar
+tu Brave real) y captura la sesion ya autenticada en `state.json` (recortada
+para pesar lo mínimo — no se sube a git, esta en `.gitignore`).
 
 ## 3. Crear un bot de Telegram para el aviso
 
@@ -40,17 +43,19 @@ presiona ENTER. Esto crea `state.json` (NO se sube a git, esta en
 
 ## 4. Configurar los secrets del repo en GitHub
 
-En GitHub: Settings > Secrets and variables > Actions > New repository secret.
-Crea estos tres:
+Sube la sesion automaticamente (la parte en varios secrets porque uno solo
+no puede pesar mas de 48KB):
 
-- `TEAMS_STATE_B64`: el contenido de `state.json` codificado en base64.
-  En PowerShell:
-  ```powershell
-  [Convert]::ToBase64String([IO.File]::ReadAllBytes("state.json")) | Set-Clipboard
-  ```
-  (queda copiado al portapapeles, pegalo como valor del secret)
-- `TELEGRAM_BOT_TOKEN`: el token del paso 3.
-- `TELEGRAM_CHAT_ID`: el numero del paso 3.
+```bash
+python scripts/upload_session.py
+```
+
+Los otros dos, con `gh` o desde Settings > Secrets and variables > Actions:
+
+```bash
+gh secret set TELEGRAM_BOT_TOKEN --repo Koraah0408/avisador-teams
+gh secret set TELEGRAM_CHAT_ID --repo Koraah0408/avisador-teams
+```
 
 ## 5. Probar
 
@@ -64,8 +69,12 @@ El cron en `.github/workflows/notify.yml` esta en **UTC**. Ciudad Madero es
 UTC-6 (sin horario de verano), asi que para que corra a las 7:00 AM local,
 el cron debe decir `0 13 * * *`. Cambialo si quieres otra hora.
 
-## Nota sobre la sesion
+## Renovar la sesion cuando expire
 
-La sesion guardada (`state.json` / el secret `TEAMS_STATE_B64`) expira cada
-cierto tiempo (semanas). Cuando el aviso empiece a decir "no se encontro
-actividad (o la sesion expiro)", repite los pasos 2 y 4 para renovarla.
+Cada cierto tiempo (semanas) la sesion expira y el aviso dira "no se
+encontro actividad (o la sesion expiro)". Repite los pasos 2 y 4:
+
+```bash
+python scripts/login_local.py
+python scripts/upload_session.py
+```

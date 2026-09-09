@@ -11,7 +11,7 @@ import requests
 from playwright.sync_api import sync_playwright
 
 STATE_PATH = os.environ.get("STATE_PATH", "state.json")
-TEAMS_ACTIVITY_URL = "https://teams.microsoft.com/v2/#/activity/"
+TEAMS_ACTIVITY_URL = "https://teams.cloud.microsoft/v2/#/activity/"
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 MAX_ITEMS = 20
@@ -19,9 +19,13 @@ MAX_ITEMS = 20
 
 def get_activity_items(page) -> list[str]:
     page.goto(TEAMS_ACTIVITY_URL)
-    page.wait_for_timeout(8000)
+    # La primera carga en un perfil sin cache tarda bastante (Teams
+    # muestra "Solo otro minuto..."), asi que esperamos al selector
+    # real en vez de un tiempo fijo corto.
+    page.wait_for_selector("[data-tid='activity-feed-list-item']", timeout=60000)
+    page.wait_for_timeout(2000)
 
-    items = page.locator("[data-tid='activity-item'], [role='listitem']")
+    items = page.locator("[data-tid='activity-feed-list-item']")
     count = min(items.count(), MAX_ITEMS)
 
     texts = []
