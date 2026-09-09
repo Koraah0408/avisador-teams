@@ -1,0 +1,385 @@
+<title>Avisador Teams</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3F5F4;
+    --surface:#FFFFFF;
+    --ink:#16232A;
+    --ink-soft:#5B6B71;
+    --line-daily:#1F7A6C;
+    --line-instant:#7C4A93;
+    --border:#DDE2E0;
+    --font-mono:'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --font-body:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#10171B;
+      --surface:#182228;
+      --ink:#ECEFEE;
+      --ink-soft:#93A5AA;
+      --line-daily:#4FCBB4;
+      --line-instant:#C79BDB;
+      --border:#293338;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#10171B;
+    --surface:#182228;
+    --ink:#ECEFEE;
+    --ink-soft:#93A5AA;
+    --line-daily:#4FCBB4;
+    --line-instant:#C79BDB;
+    --border:#293338;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+  }
+  .page{
+    max-width:980px;
+    margin:0 auto;
+    padding:56px 24px 72px;
+    display:flex;
+    flex-direction:column;
+    gap:44px;
+  }
+
+  /* header */
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:var(--font-mono);
+    font-size:clamp(28px,4vw,38px);
+    font-weight:700;
+    letter-spacing:-.01em;
+    margin:0 0 12px;
+    text-wrap:balance;
+  }
+  .lede{
+    font-size:16px;
+    line-height:1.6;
+    color:var(--ink-soft);
+    max-width:62ch;
+    margin:0;
+  }
+
+  /* diagram */
+  figure.diagram{
+    margin:0;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:20px 20px 8px;
+  }
+  figure.diagram svg{
+    display:block;
+    width:100%;
+    height:auto;
+    overflow:visible;
+  }
+  svg text{ font-family:var(--font-mono); fill:var(--ink); }
+  .node rect{ fill:var(--surface); stroke:var(--ink); stroke-width:1.4; }
+  .node .label{ font-size:13px; font-weight:600; }
+  .node .sublabel{ font-size:10.5px; fill:var(--ink-soft); font-weight:400; letter-spacing:.01em; }
+  .node.hub rect{ stroke-width:1.6; }
+
+  .row-title{ font-size:12.5px; font-weight:700; letter-spacing:.08em; }
+  .row-title.daily{ fill:var(--line-daily); }
+  .row-title.instant{ fill:var(--line-instant); }
+
+  .edge-daily{ stroke:var(--line-daily); }
+  .edge-instant{ stroke:var(--line-instant); }
+  .edge{ stroke-width:2; fill:none; }
+  .edge-label{ font-family:var(--font-body); font-size:10.5px; fill:var(--ink-soft); }
+
+  figcaption{
+    font-size:13px;
+    color:var(--ink-soft);
+    padding:14px 4px 10px;
+    border-top:1px solid var(--border);
+    margin-top:14px;
+    line-height:1.6;
+  }
+
+  /* legend */
+  h2{
+    font-family:var(--font-mono);
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+  }
+  .legend-list{
+    display:grid;
+    grid-template-columns:14px minmax(180px,220px) 1fr;
+    column-gap:16px;
+    row-gap:14px;
+    align-items:baseline;
+  }
+  .swatch{
+    width:11px;height:11px;border-radius:2px;
+    align-self:center;
+    grid-row:span 1;
+  }
+  .swatch.daily{ background:var(--line-daily); }
+  .swatch.instant{ background:var(--line-instant); }
+  .swatch.shared{
+    background:linear-gradient(135deg, var(--line-daily) 0 50%, var(--line-instant) 50% 100%);
+  }
+  .legend-name{
+    font-family:var(--font-mono);
+    font-size:13.5px;
+    font-weight:600;
+  }
+  .legend-desc{
+    font-size:13.5px;
+    line-height:1.55;
+    color:var(--ink-soft);
+  }
+  .legend-desc b{ color:var(--ink); font-weight:600; }
+
+  /* history */
+  .history-lede{
+    font-size:14px;
+    line-height:1.6;
+    color:var(--ink-soft);
+    margin:0 0 18px;
+    max-width:62ch;
+  }
+  .history-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .history-item{
+    display:grid;
+    grid-template-columns:auto 200px 1fr;
+    gap:14px;
+    align-items:baseline;
+    padding:12px 14px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:13.5px;
+  }
+  .history-tag{
+    font-family:var(--font-mono);
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:3px 8px;
+    white-space:nowrap;
+  }
+  .history-name{ font-family:var(--font-mono); font-weight:600; }
+  .history-why{ color:var(--ink-soft); line-height:1.55; }
+
+  footer{
+    font-size:13px;
+    color:var(--ink-soft);
+    border-top:1px solid var(--border);
+    padding-top:20px;
+  }
+  footer a{ color:var(--ink); }
+
+  @media (max-width:640px){
+    .legend-list{ grid-template-columns:14px 1fr; }
+    .legend-name{ grid-column:2; }
+    .legend-desc{ grid-column:2; }
+    .swatch{ grid-column:1; }
+    .history-item{ grid-template-columns:1fr; gap:6px; }
+  }
+</style>
+
+<div class="page">
+
+  <header>
+    <p class="eyebrow">Documentación del proyecto</p>
+    <h1>Avisador Teams</h1>
+    <p class="lede">Dos rutas automáticas resuelven el mismo problema: leer Microsoft Teams sin permiso de administrador. Una corre una vez al día y te avisa; la otra espera tus preguntas y contesta al instante. Comparten un solo archivo como memoria.</p>
+  </header>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 1080 640" role="img" aria-label="Diagrama de dos rutas: la Línea 1, un cron diario de GitHub Actions que usa Playwright para leer Teams y avisa por Telegram; y la Línea 2, un webhook de Telegram que activa un Cloudflare Worker que consulta Gemini y responde al instante. Ambas rutas comparten el archivo data/latest_activity.json como memoria.">
+      <defs>
+        <marker id="arrow-daily" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 Z" style="fill:var(--line-daily)"/>
+        </marker>
+        <marker id="arrow-instant" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 Z" style="fill:var(--line-instant)"/>
+        </marker>
+      </defs>
+
+      <!-- ROW A TITLE -->
+      <text x="40" y="46" class="row-title daily">LÍNEA 1 · AVISO DIARIO — 7:00&#8201;AM</text>
+
+      <!-- ROW A ARROWS -->
+      <line x1="180" y1="100" x2="212" y2="100" class="edge edge-daily" marker-end="url(#arrow-daily)"/>
+      <line x1="352" y1="100" x2="384" y2="100" class="edge edge-daily" marker-end="url(#arrow-daily)"/>
+      <line x1="524" y1="100" x2="556" y2="100" class="edge edge-daily" marker-end="url(#arrow-daily)"/>
+      <line x1="696" y1="100" x2="728" y2="100" class="edge edge-daily" marker-end="url(#arrow-daily)"/>
+      <line x1="868" y1="100" x2="900" y2="100" class="edge edge-daily" marker-end="url(#arrow-daily)"/>
+      <text x="196" y="90" text-anchor="middle" class="edge-label">dispara</text>
+      <text x="368" y="90" text-anchor="middle" class="edge-label">abre</text>
+      <text x="540" y="90" text-anchor="middle" class="edge-label">entra a</text>
+      <text x="712" y="90" text-anchor="middle" class="edge-label">avisa</text>
+      <text x="884" y="90" text-anchor="middle" class="edge-label">manda</text>
+
+      <!-- ROW A -> HUB -->
+      <path d="M634,130 L660,270" class="edge edge-daily" marker-end="url(#arrow-daily)"/>
+      <text x="600" y="205" text-anchor="middle" class="edge-label">guarda</text>
+
+      <!-- ROW A NODES -->
+      <g class="node"><rect x="40" y="70" width="140" height="60" rx="6"/>
+        <text x="110" y="94" text-anchor="middle" class="label">7:00 AM</text>
+        <text x="110" y="112" text-anchor="middle" class="sublabel">cron · UTC-6</text></g>
+
+      <g class="node"><rect x="212" y="70" width="140" height="60" rx="6"/>
+        <text x="282" y="94" text-anchor="middle" class="label">GitHub Actions</text>
+        <text x="282" y="112" text-anchor="middle" class="sublabel">workflow</text></g>
+
+      <g class="node"><rect x="384" y="70" width="140" height="60" rx="6"/>
+        <text x="454" y="94" text-anchor="middle" class="label">Playwright</text>
+        <text x="454" y="112" text-anchor="middle" class="sublabel">chromium headless</text></g>
+
+      <g class="node"><rect x="556" y="70" width="140" height="60" rx="6"/>
+        <text x="626" y="94" text-anchor="middle" class="label">Teams</text>
+        <text x="626" y="112" text-anchor="middle" class="sublabel">sesión copiada</text></g>
+
+      <g class="node"><rect x="728" y="70" width="140" height="60" rx="6"/>
+        <text x="798" y="94" text-anchor="middle" class="label">Telegram</text>
+        <text x="798" y="112" text-anchor="middle" class="sublabel">sendMessage</text></g>
+
+      <g class="node"><rect x="900" y="70" width="140" height="60" rx="6"/>
+        <text x="970" y="94" text-anchor="middle" class="label">Tú</text>
+        <text x="970" y="112" text-anchor="middle" class="sublabel">recibes el aviso</text></g>
+
+      <!-- HUB -->
+      <g class="node hub"><rect x="617" y="270" width="190" height="60" rx="6"/>
+        <text x="712" y="294" text-anchor="middle" class="label">latest_activity.json</text>
+        <text x="712" y="312" text-anchor="middle" class="sublabel">repo de GitHub · público</text></g>
+
+      <!-- HUB -> ROW B -->
+      <line x1="712" y1="330" x2="712" y2="470" class="edge edge-instant" marker-end="url(#arrow-instant)"/>
+      <text x="738" y="405" class="edge-label">lee</text>
+
+      <!-- ROW B TITLE -->
+      <text x="40" y="452" class="row-title instant">LÍNEA 2 · PREGUNTAS INSTANTÁNEAS</text>
+
+      <!-- ROW B ARROWS -->
+      <line x1="270" y1="500" x2="360" y2="500" class="edge edge-instant" marker-end="url(#arrow-instant)"/>
+      <line x1="500" y1="500" x2="642" y2="500" class="edge edge-instant" marker-end="url(#arrow-instant)"/>
+      <line x1="782" y1="500" x2="870" y2="500" class="edge edge-instant" marker-end="url(#arrow-instant)"/>
+      <text x="315" y="490" text-anchor="middle" class="edge-label">escribes</text>
+      <text x="571" y="490" text-anchor="middle" class="edge-label">webhook</text>
+      <text x="826" y="490" text-anchor="middle" class="edge-label">pregunta + contexto</text>
+
+      <!-- RETURN ARC -->
+      <path d="M940,530 C 940,596 200,596 200,530" class="edge edge-instant" style="stroke-dasharray:5 5" marker-end="url(#arrow-instant)"/>
+      <text x="570" y="616" text-anchor="middle" class="edge-label">respuesta — mismo camino, al instante</text>
+
+      <!-- ROW B NODES -->
+      <g class="node"><rect x="130" y="470" width="140" height="60" rx="6"/>
+        <text x="200" y="494" text-anchor="middle" class="label">Tú</text>
+        <text x="200" y="512" text-anchor="middle" class="sublabel">le preguntas al bot</text></g>
+
+      <g class="node"><rect x="360" y="470" width="140" height="60" rx="6"/>
+        <text x="430" y="494" text-anchor="middle" class="label">Telegram</text>
+        <text x="430" y="512" text-anchor="middle" class="sublabel">webhook</text></g>
+
+      <g class="node"><rect x="642" y="470" width="140" height="60" rx="6"/>
+        <text x="712" y="494" text-anchor="middle" class="label">Cloudflare</text>
+        <text x="712" y="512" text-anchor="middle" class="sublabel">Worker</text></g>
+
+      <g class="node"><rect x="870" y="470" width="140" height="60" rx="6"/>
+        <text x="940" y="494" text-anchor="middle" class="label">Gemini</text>
+        <text x="940" y="512" text-anchor="middle" class="sublabel">generateContent</text></g>
+
+    </svg>
+    <figcaption>La Línea 1 (verde) corre una vez al día: abre Teams con una sesión ya guardada, lee tus tareas y te manda el resumen. La Línea 2 (morado) espera — en cuanto le escribes al bot, Telegram avisa al instante a un Worker de Cloudflare, que lee el mismo archivo que dejó la Línea 1 y le pasa tu pregunta a Gemini.</figcaption>
+  </figure>
+
+  <section aria-labelledby="legend-h">
+    <h2 id="legend-h">Qué hace cada pieza</h2>
+    <div class="legend-list">
+
+      <span class="swatch daily"></span>
+      <span class="legend-name">GitHub Actions</span>
+      <span class="legend-desc"><b>Cron gratis en la nube.</b> Dispara el workflow diario a las 7:00&#8201;AM hora Ciudad Madero — no depende de que tu laptop o celular estén prendidos.</span>
+
+      <span class="swatch daily"></span>
+      <span class="legend-name">Playwright</span>
+      <span class="legend-desc"><b>Automatización de navegador.</b> Abre un Chromium invisible con tu sesión de Teams ya capturada (copiando tu perfil de Brave — Microsoft bloquea el login automatizado directo).</span>
+
+      <span class="swatch daily"></span>
+      <span class="legend-name">Teams</span>
+      <span class="legend-desc"><b>teams.cloud.microsoft.</b> Se lee el feed de Actividad y, tarea por tarea, si está "Entregada" o "No entregada" y sus instrucciones.</span>
+
+      <span class="swatch shared"></span>
+      <span class="legend-name">latest_activity.json</span>
+      <span class="legend-desc"><b>La memoria compartida.</b> Un archivo en el repo (público) donde la Línea&nbsp;1 escribe cada mañana y de donde la Línea&nbsp;2 lee cada vez que le preguntas algo.</span>
+
+      <span class="swatch daily"></span>
+      <span class="legend-name">Telegram · sendMessage</span>
+      <span class="legend-desc"><b>API de Telegram, modo envío.</b> Así te llega el resumen diario a tu chat con el bot.</span>
+
+      <span class="swatch instant"></span>
+      <span class="legend-name">Telegram · Webhook</span>
+      <span class="legend-desc"><b>API de Telegram, modo aviso instantáneo.</b> En vez de que el bot pregunte cada rato "¿hay mensajes?", Telegram le avisa apenas escribes.</span>
+
+      <span class="swatch instant"></span>
+      <span class="legend-name">Cloudflare Worker</span>
+      <span class="legend-desc"><b>Función en la nube, siempre lista.</b> Recibe el aviso de Telegram, arma tu pregunta junto con el contexto guardado y llama a la IA — sin servidor propio que mantener prendido.</span>
+
+      <span class="swatch instant"></span>
+      <span class="legend-name">Gemini API</span>
+      <span class="legend-desc"><b>generateContent · gemini-2.5-flash.</b> Recibe tu pregunta + el contexto de tareas y redacta la respuesta en español, sin markdown, filtrando lo ya entregado.</span>
+
+    </div>
+  </section>
+
+  <section aria-labelledby="history-h">
+    <h2 id="history-h">Por qué no fue más directo</h2>
+    <p class="history-lede">No leer Teams por su API oficial fue decisión forzada, no de diseño — se probaron tres caminos antes de este:</p>
+    <div class="history-list">
+      <div class="history-item">
+        <span class="history-tag">descartado</span>
+        <span class="history-name">Microsoft Graph API</span>
+        <span class="history-why">Los permisos de tareas y mensajes de canal requieren aprobación de un administrador — la escuela no puede dárselos a un alumno individual.</span>
+      </div>
+      <div class="history-item">
+        <span class="history-tag">descartado</span>
+        <span class="history-name">Login automatizado</span>
+        <span class="history-why">Microsoft detecta que Playwright controla el navegador (sin importar cuál) y bloquea el inicio de sesión interactivo antes de completarlo.</span>
+      </div>
+      <div class="history-item">
+        <span class="history-tag">descartado</span>
+        <span class="history-name">Oracle Cloud (VPS gratis)</span>
+        <span class="history-why">Sin capacidad disponible para instancias gratuitas en la región de Querétaro — reintentado varias veces, sin éxito.</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Código completo en <a href="https://github.com/Koraah0408/avisador-teams" target="_blank" rel="noopener">github.com/Koraah0408/avisador-teams</a>
+  </footer>
+
+</div>
