@@ -87,17 +87,24 @@ ${context}
 Pregunta del estudiante: ${question}`;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-  });
-  if (!resp.ok) {
-    const errText = await resp.text();
-    throw new Error(`${resp.status} ${errText}`);
+  const body = JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] });
+
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      return data.candidates[0].content.parts[0].text;
+    }
+    lastError = new Error(`${resp.status} ${await resp.text()}`);
+    if (resp.status !== 503) break; // solo reintenta si esta saturado
   }
-  const data = await resp.json();
-  return data.candidates[0].content.parts[0].text;
+  throw lastError;
 }
 
 async function sendTelegram(env, text) {

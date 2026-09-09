@@ -8,6 +8,7 @@ instantaneo, pero no requiere servidor propio).
 
 import json
 import os
+import time
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -89,10 +90,18 @@ def ask_gemini(question: str, context: str) -> str:
         f"https://generativelanguage.googleapis.com/v1beta/models/"
         f"{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
     )
-    resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]})
+    body = {"contents": [{"parts": [{"text": prompt}]}]}
+
+    for attempt in range(3):
+        if attempt > 0:
+            time.sleep(1.5 * attempt)
+        resp = requests.post(url, json=body)
+        if resp.ok:
+            data = resp.json()
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+        if resp.status_code != 503:  # solo reintenta si esta saturado
+            break
     resp.raise_for_status()
-    data = resp.json()
-    return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
 def send_telegram(text: str):
