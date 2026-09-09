@@ -39,11 +39,22 @@ def save_state(state: dict):
 
 
 def load_activity_context() -> str:
-    if os.path.exists(ACTIVITY_PATH):
-        with open(ACTIVITY_PATH, encoding="utf-8") as f:
-            items = json.load(f)
-        return "\n".join(f"- {item}" for item in items)
-    return "(todavia no hay informacion de Teams guardada)"
+    if not os.path.exists(ACTIVITY_PATH):
+        return "(todavia no hay informacion de Teams guardada)"
+
+    with open(ACTIVITY_PATH, encoding="utf-8") as f:
+        items = json.load(f)
+
+    parts = []
+    for item in items:
+        if isinstance(item, str):
+            parts.append(f"- {item}")
+            continue
+        block = f"- {item['summary']}"
+        if item.get("detail"):
+            block += f"\n  Detalle de la tarea (incluye si esta entregada o no, e instrucciones):\n  {item['detail']}"
+        parts.append(block)
+    return "\n\n".join(parts)
 
 
 def ask_gemini(question: str, context: str) -> str:
@@ -53,11 +64,13 @@ def ask_gemini(question: str, context: str) -> str:
         "tareas y avisos de clase en Microsoft Teams. Responde en espanol, "
         "corto y directo, basandote SOLO en esta informacion (puede tener "
         "hasta un dia de antiguedad).\n\n"
-        f"Hoy es {hoy}. Si te preguntan por tareas PENDIENTES, incluye solo "
-        "las que vencen hoy o en el futuro segun esta fecha -- una tarea "
-        "cuya fecha de vencimiento ya paso se asume entregada y NO se debe "
-        "mencionar como pendiente (a menos que el estudiante pida el "
-        "historial completo o pregunte especificamente por tareas viejas).\n\n"
+        f"Hoy es {hoy}. Si te preguntan por tareas PENDIENTES: cuando una "
+        "tarea tenga 'Detalle de la tarea', ese texto dice literalmente si "
+        "esta 'Entregada' o 'No entregada' -- usa ese dato tal cual, es mas "
+        "confiable que adivinar por fecha. Si una tarea NO tiene detalle, "
+        "asume que ya paso su fecha de vencimiento y no la muestres como "
+        "pendiente. Nunca muestres como pendiente una tarea marcada "
+        "'Entregada' (aunque el estudiante ya la haya entregado tarde).\n\n"
         "La lista de actividad esta ordenada de mas reciente a mas antigua "
         "y puede mencionar la MISMA tarea varias veces (por ejemplo primero "
         "'agrego' y despues 'actualizo' la misma tarea porque el profesor "

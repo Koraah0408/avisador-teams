@@ -19,7 +19,20 @@ ACTIVITY_SNAPSHOT_PATH = "data/latest_activity.json"
 MAX_ITEMS = 20
 
 
-def get_activity_items(page) -> list[str]:
+def get_assignment_detail(page) -> str | None:
+    """Si el click abrio el panel de la tarea (iframe de Assignments),
+    regresa su texto completo: estado (entregada/no), instrucciones,
+    materiales de referencia, etc."""
+    for f in page.frames:
+        if "assignments.edu.cloud.microsoft" in f.url:
+            try:
+                return f.locator("body").inner_text().strip()
+            except Exception:
+                return None
+    return None
+
+
+def get_activity_items(page) -> list[dict]:
     page.goto(TEAMS_ACTIVITY_URL)
     # La primera carga en un perfil sin cache tarda bastante (Teams
     # muestra "Solo otro minuto..."), asi que esperamos al selector
@@ -30,12 +43,27 @@ def get_activity_items(page) -> list[str]:
     items = page.locator("[data-tid='activity-feed-list-item']")
     count = min(items.count(), MAX_ITEMS)
 
-    texts = []
+    results = []
     for i in range(count):
-        text = items.nth(i).inner_text().strip()
-        if text:
-            texts.append(text.replace("\n", " | "))
-    return texts
+        item = items.nth(i)
+        text = item.inner_text().strip()
+        if not text:
+            continue
+        summary = text.replace("\n", " | ")
+
+        detail = None
+        if "asignaci" in summary.lower():
+            # Es una tarea: entramos a ver detalle (estado real de
+            # entrega + instrucciones), no solo el resumen del feed.
+            try:
+                item.click()
+                page.wait_for_timeout(4000)
+                detail = get_assignment_detail(page)
+            except Exception:
+                detail = None
+
+        results.append({"summary": summary, "detail": detail})
+    return results
 
 
 def send_telegram(message: str):
@@ -66,7 +94,7 @@ def main():
         browser.close()
 
     if items:
-        body = "\n\n".join(f"- {item}" for item in items)
+        body = "\n\n".join(f"- {item['summary']}" for item in items)
         message = f"Resumen de Teams de hoy:\n\n{body}"
         os.makedirs(os.path.dirname(ACTIVITY_SNAPSHOT_PATH), exist_ok=True)
         with open(ACTIVITY_SNAPSHOT_PATH, "w", encoding="utf-8") as f:

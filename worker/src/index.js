@@ -51,7 +51,16 @@ async function loadActivityContext() {
     const resp = await fetch(ACTIVITY_URL, { cf: { cacheTtl: 0 } });
     if (!resp.ok) return "(todavia no hay informacion de Teams guardada)";
     const items = await resp.json();
-    return items.map((i) => `- ${i}`).join("\n");
+    return items
+      .map((item) => {
+        if (typeof item === "string") return `- ${item}`;
+        let block = `- ${item.summary}`;
+        if (item.detail) {
+          block += `\n  Detalle de la tarea (incluye si esta entregada o no, e instrucciones):\n  ${item.detail}`;
+        }
+        return block;
+      })
+      .join("\n\n");
   } catch {
     return "(todavia no hay informacion de Teams guardada)";
   }
@@ -67,7 +76,7 @@ async function askGemini(env, question, context) {
   const hoy = hoyEnMexico();
   const prompt = `Eres un asistente que ayuda a un estudiante con dudas sobre sus tareas y avisos de clase en Microsoft Teams. Responde en espanol, corto y directo, basandote SOLO en esta informacion (puede tener hasta un dia de antiguedad).
 
-Hoy es ${hoy}. Si te preguntan por tareas PENDIENTES, incluye solo las que vencen hoy o en el futuro segun esta fecha -- una tarea cuya fecha de vencimiento ya paso se asume entregada y NO se debe mencionar como pendiente (a menos que el estudiante pida el historial completo o pregunte especificamente por tareas viejas).
+Hoy es ${hoy}. Si te preguntan por tareas PENDIENTES: cuando una tarea tenga "Detalle de la tarea", ese texto dice literalmente si esta "Entregada" o "No entregada" -- usa ese dato tal cual, es mas confiable que adivinar por fecha. Si una tarea NO tiene detalle, asume que ya paso su fecha de vencimiento y no la muestres como pendiente. Nunca muestres como pendiente una tarea marcada "Entregada" (aunque el estudiante ya la haya entregado tarde).
 
 La lista de actividad esta ordenada de mas reciente a mas antigua y puede mencionar la MISMA tarea varias veces (por ejemplo primero "agrego" y despues "actualizo" la misma tarea porque el profesor le cambio la fecha). Si el nombre de la materia y el nombre de la tarea coinciden, cuentala como una sola tarea y usa el dato mas reciente (la primera mencion que aparece en la lista) -- nunca la repitas ni la cuentes dos veces.
 
