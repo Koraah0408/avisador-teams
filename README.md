@@ -69,6 +69,20 @@ El cron en `.github/workflows/notify.yml` esta en **UTC**. Ciudad Madero es
 UTC-6 (sin horario de verano), asi que para que corra a las 7:00 AM local,
 el cron debe decir `0 13 * * *`. Cambialo si quieres otra hora.
 
+## 7. Bot de preguntas (opcional)
+
+Puedes escribirle al bot de Telegram preguntas como "¿que tareas tengo esta
+semana?" y responde usando Gemini, basandose en el ultimo resumen guardado.
+No es instantaneo (revisa mensajes nuevos cada 10 minutos).
+
+1. Consigue una API key gratis en [Google AI Studio](https://aistudio.google.com/apikey).
+2. Agregala como secret:
+   ```bash
+   gh secret set GEMINI_API_KEY --repo Koraah0408/avisador-teams
+   ```
+3. Prueba manualmente: pestaña **Actions** > "Responder preguntas por
+   Telegram" > **Run workflow**, despues de escribirle algo al bot.
+
 ## Renovar la sesion cuando expire
 
 Cada cierto tiempo (semanas) la sesion expira y el aviso dira "no se

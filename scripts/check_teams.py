@@ -4,6 +4,7 @@ canal) usando una sesion guardada previamente, y manda un resumen por
 Telegram. Pensado para correr diario desde GitHub Actions.
 """
 
+import json
 import os
 import sys
 
@@ -14,6 +15,7 @@ STATE_PATH = os.environ.get("STATE_PATH", "state.json")
 TEAMS_ACTIVITY_URL = "https://teams.cloud.microsoft/v2/#/activity/"
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+ACTIVITY_SNAPSHOT_PATH = "data/latest_activity.json"
 MAX_ITEMS = 20
 
 
@@ -66,6 +68,9 @@ def main():
     if items:
         body = "\n\n".join(f"- {item}" for item in items)
         message = f"Resumen de Teams de hoy:\n\n{body}"
+        os.makedirs(os.path.dirname(ACTIVITY_SNAPSHOT_PATH), exist_ok=True)
+        with open(ACTIVITY_SNAPSHOT_PATH, "w", encoding="utf-8") as f:
+            json.dump(items, f, ensure_ascii=False, indent=2)
     else:
         message = "Resumen de Teams de hoy: no se encontro actividad nueva (o la sesion expiro)."
 
