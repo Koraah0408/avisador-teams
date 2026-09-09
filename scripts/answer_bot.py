@@ -48,7 +48,11 @@ def ask_gemini(question: str, context: str) -> str:
         "Eres un asistente que ayuda a un estudiante con dudas sobre sus "
         "tareas y avisos de clase en Microsoft Teams. Responde en espanol, "
         "corto y directo, basandote SOLO en esta informacion (puede tener "
-        "hasta un dia de antiguedad):\n\n"
+        "hasta un dia de antiguedad).\n\n"
+        "Formato de la respuesta: texto plano, SIN markdown (nada de "
+        "asteriscos, guiones bajos ni almohadillas). Si listas varias "
+        "tareas, pon cada una en su propia linea empezando con '- ', "
+        "incluyendo materia y fecha de vencimiento.\n\n"
         f"{context}\n\n"
         f"Pregunta del estudiante: {question}"
     )
