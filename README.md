@@ -69,19 +69,38 @@ El cron en `.github/workflows/notify.yml` esta en **UTC**. Ciudad Madero es
 UTC-6 (sin horario de verano), asi que para que corra a las 7:00 AM local,
 el cron debe decir `0 13 * * *`. Cambialo si quieres otra hora.
 
-## 7. Bot de preguntas (opcional)
+## 7. Bot de preguntas (respuesta instantanea via Cloudflare Worker)
 
 Puedes escribirle al bot de Telegram preguntas como "¿que tareas tengo esta
-semana?" y responde usando Gemini, basandose en el ultimo resumen guardado.
-No es instantaneo (revisa mensajes nuevos cada 10 minutos).
+semana?" y responde al instante usando Gemini, basandose en el ultimo
+snapshot guardado (`data/latest_activity.json`, publico en el repo).
 
-1. Consigue una API key gratis en [Google AI Studio](https://aistudio.google.com/apikey).
-2. Agregala como secret:
-   ```bash
-   gh secret set GEMINI_API_KEY --repo Koraah0408/avisador-teams
-   ```
-3. Prueba manualmente: pestaña **Actions** > "Responder preguntas por
-   Telegram" > **Run workflow**, despues de escribirle algo al bot.
+El codigo esta en `worker/`. Se despliega asi:
+
+```bash
+cd worker
+npx wrangler login
+npx wrangler deploy
+npx wrangler secret put TELEGRAM_BOT_TOKEN
+npx wrangler secret put TELEGRAM_CHAT_ID
+npx wrangler secret put GEMINI_API_KEY
+npx wrangler secret put WEBHOOK_SECRET   # cualquier cadena aleatoria larga
+```
+
+Y despues se le dice a Telegram que mande los mensajes a ese Worker
+(cambia `<URL>` por la que te dio `wrangler deploy`, y `<SECRET>` por el
+mismo valor que pusiste en `WEBHOOK_SECRET`):
+
+```bash
+curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
+  -d "url=<URL>" -d "secret_token=<SECRET>"
+```
+
+Nota: el `scripts/answer_bot.py` + workflow `answer_bot.yml` (polling cada
+10 min) fue el prototipo inicial. Con el Worker activo ya no corre por cron
+(Telegram no deja usar `getUpdates` y webhook a la vez) — se dejo el
+workflow con `workflow_dispatch` por si algun dia se quita el webhook y se
+quiere volver a ese modo.
 
 ## Renovar la sesion cuando expire
 

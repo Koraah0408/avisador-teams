@@ -1,8 +1,11 @@
 name: Responder preguntas por Telegram
 
+# El cron se desactivo: ahora un Worker de Cloudflare (carpeta worker/)
+# responde al instante via webhook de Telegram. Telegram no permite usar
+# getUpdates (lo que hace este workflow) al mismo tiempo que un webhook
+# esta activo. Se deja workflow_dispatch por si se quiere volver al
+# modo de polling (borrando el webhook primero con setWebhook?url=).
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch: {}
 
 permissions:
