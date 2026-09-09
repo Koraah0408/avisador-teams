@@ -17,7 +17,7 @@ GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 
 STATE_PATH = "data/bot_state.json"
 ACTIVITY_PATH = "data/latest_activity.json"
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
