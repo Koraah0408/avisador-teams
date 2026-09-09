@@ -1,0 +1,32 @@
+name: Aviso diario de Teams
+
+on:
+  schedule:
+    # 13:00 UTC = 7:00 AM hora Ciudad Madero (UTC-6, sin horario de verano).
+    # Ajusta este valor si quieres otra hora: minuto hora * * *
+    - cron: "0 13 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  check-teams:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Restaurar sesion de Teams
+        run: echo "${{ secrets.TEAMS_STATE_B64 }}" | base64 -d > state.json
+
+      - name: Revisar Teams y notificar
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/check_teams.py
